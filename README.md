@@ -5,8 +5,6 @@
 A live multiplayer quiz game (think Kahoot) with a real backend: user accounts, a database,
 server-authoritative real-time gameplay over WebSockets, a leaderboard, and an admin panel.
 
-![screenshot](docs/screenshot.png) <!-- add a screenshot or GIF of a game here -->
-
 ## Features
 
 - **Accounts**: register / login, passwords hashed with bcrypt, JWT in an `httpOnly` cookie
