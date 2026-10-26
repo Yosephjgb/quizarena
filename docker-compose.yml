@@ -1,0 +1,13 @@
+services:
+  quizarena:
+    build: .
+    ports: ["3000:3000"]
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in your shell or a .env file}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      TRUST_PROXY: "1"
+    volumes:
+      - quizdata:/data
+volumes:
+  quizdata:
