@@ -1,3 +1,5 @@
+![QuizArena](docs/banner.png)
+
 # QuizArena
 
 A live multiplayer quiz game (think Kahoot) with a real backend: user accounts, a database,
