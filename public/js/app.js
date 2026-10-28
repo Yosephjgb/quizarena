@@ -161,6 +161,7 @@ function renderHome() {
 async function playTab(body) {
   const category = el('select', {}, el('option', { value: '' }, 'All categories'));
   const count = el('input', { type: 'number', min: 1, max: 30, value: 10 });
+  const hostPlays = el('input', { type: 'checkbox', id: 'host-plays', checked: true });
   const createErr = el('div', { class: 'error', role: 'alert' });
   const code = el('input', { maxlength: 6, placeholder: 'ABC123', autocapitalize: 'characters', style: 'text-transform:uppercase;letter-spacing:.2em;font-size:1.3rem;text-align:center' });
   const joinErr = el('div', { class: 'error', role: 'alert' });
@@ -168,13 +169,18 @@ async function playTab(body) {
   body.append(el('div', { class: 'grid2' },
     el('div', { class: 'card' },
       el('h3', {}, 'Host a game'),
-      el('p', { class: 'muted' }, 'You control the game from your screen; players answer on theirs.'),
+      el('p', { class: 'muted' }, 'Create a room with a 6-character code. Play along or host for others.'),
       el('label', {}, 'Category'), category,
       el('label', {}, 'Number of questions'), count,
+      el('label', { class: 'check-row' }, hostPlays, el('span', {}, 'Participate as a player')),
       createErr,
       el('button', { class: 'block', onclick: async () => {
         createErr.textContent = '';
-        const r = await send('game:create', { category: category.value || undefined, count: Number(count.value) || 10 });
+        const r = await send('game:create', {
+          category: category.value || undefined,
+          count: Number(count.value) || 10,
+          hostPlays: hostPlays.checked,
+        });
         if (!r.ok) return (createErr.textContent = r.error);
         room = { ...(room || {}), ...r.snapshot };
         route();
@@ -243,9 +249,10 @@ async function historyTab(body) {
 // ---------- room ----------
 function renderRoom() {
   const isHost = room.hostId === me.id;
-  if (room.status === 'lobby') return renderLobby(isHost);
-  if (room.status === 'question') return renderQuestion(isHost);
-  if (room.status === 'reveal') return renderReveal(isHost);
+  const isPlayer = !!(room.players || []).some((p) => p.userId === me.id);
+  if (room.status === 'lobby') return renderLobby(isHost, isPlayer);
+  if (room.status === 'question') return renderQuestion(isHost, isPlayer);
+  if (room.status === 'reveal') return renderReveal(isHost, isPlayer);
   if (room.status === 'ended') return renderEnd();
 }
 
@@ -258,15 +265,19 @@ function leaveButton() {
   } }, 'Leave');
 }
 
-function renderLobby(isHost) {
+function renderLobby(isHost, isPlayer) {
   const players = room.players || [];
   clear(app).append(el('div', { class: 'card' },
-    el('p', { class: 'muted', style: 'text-align:center;margin:0' }, `Hosted by ${room.hostName} · ${room.total} questions · ${room.category || 'All categories'}`),
+    el('p', { class: 'muted', style: 'text-align:center;margin:0' },
+      `Hosted by ${room.hostName}${room.hostPlays ? ' (playing)' : ' (presenter)'} · ${room.total} questions · ${room.category || 'All categories'}`),
     el('div', { class: 'code', 'aria-label': 'Game code' }, room.code),
     el('p', { class: 'muted', style: 'text-align:center' }, 'Share this code with your friends'),
     el('h3', {}, `Players (${players.length})`),
     players.length
-      ? el('div', { class: 'players' }, players.map((p) => el('span', { class: `player${p.connected ? '' : ' off'}` }, p.username)))
+      ? el('div', { class: 'players' }, players.map((p) => el('span', { class: `player${p.connected ? '' : ' off'}` },
+          p.username,
+          p.userId === room.hostId ? el('span', { class: 'pill', style: 'margin-left:6px;font-size:.7rem' }, 'host') : null
+        )))
       : el('p', { class: 'muted' }, 'Waiting for players to join…'),
     el('div', { class: 'row', style: 'margin-top:16px' },
       isHost ? el('button', { disabled: players.length < 1, onclick: async () => {
@@ -289,16 +300,16 @@ function startCountdown(q, bar, label) {
   tick = setInterval(update, 100);
 }
 
-function renderQuestion(isHost) {
+function renderQuestion(isHost, isPlayer) {
   const q = room.question;
   const bar = el('i');
   const timeLabel = el('span');
   const banner = el('div', { class: 'banner info', hidden: true });
   const buttons = q.options.map((text, i) => el('button', {
     class: 'opt',
-    disabled: isHost || myChoice !== null,
+    disabled: !isPlayer || myChoice !== null,
     onclick: async () => {
-      if (myChoice !== null) return;
+      if (!isPlayer || myChoice !== null) return;
       myChoice = i;
       buttons.forEach((b, j) => { b.disabled = true; b.classList.toggle('picked', j === i); });
       const r = await send('answer:submit', { choice: i });
@@ -312,22 +323,25 @@ function renderQuestion(isHost) {
 
   const c = room.answerCount || { answered: 0, total: (room.players || []).length };
   clear(app).append(el('div', { class: 'card' },
-    el('div', { class: 'qhead' }, el('span', {}, `Question ${q.index + 1} of ${q.total}`), timeLabel),
+    el('div', { class: 'qhead' },
+      el('span', {}, `Question ${q.index + 1} of ${q.total}`),
+      el('span', { id: 'answer-count', class: 'muted' }, `${c.answered} / ${c.total} answered`),
+      timeLabel),
     el('div', { class: 'bar' }, bar),
     el('div', { class: 'qtext' }, q.text),
-    isHost ? el('div', { class: 'banner info' }, el('span', { id: 'answer-count' }, `${c.answered} / ${c.total} answered`)) : banner,
+    !isPlayer ? el('div', { class: 'banner info' }, 'Presenter mode · Answers are hidden on this screen') : banner,
     el('div', { class: 'opts' }, buttons)));
   startCountdown(q, bar, timeLabel);
 }
 
-function renderReveal(isHost) {
+function renderReveal(isHost, isPlayer) {
   const r = room.result;
   const q = { text: r.text, options: r.options }; // included in the result so a reconnecting client can draw it too
   const mine = r.choices.find((c) => c.userId === me.id);
   const meRow = r.leaderboard.find((p) => p.userId === me.id);
 
   let banner;
-  if (isHost) banner = el('div', { class: 'banner info' }, 'Results for this question');
+  if (!isPlayer) banner = el('div', { class: 'banner info' }, 'Results for this question');
   else if (!mine || mine.choice === null) banner = el('div', { class: 'banner bad' }, "Time's up. You didn't answer.");
   else if (mine.correct) banner = el('div', { class: 'banner good' }, `Correct! +${meRow?.lastGain ?? 0} points`);
   else banner = el('div', { class: 'banner bad' }, 'Not quite.');

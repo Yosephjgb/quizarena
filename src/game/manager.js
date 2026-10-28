@@ -71,6 +71,7 @@ export class GameManager {
       status: game.status,
       hostId: game.hostId,
       hostName: game.hostName,
+      hostPlays: Boolean(game.hostPlays),
       category: game.category,
       total: game.questions.length,
       players: this.playerList(game),
@@ -117,7 +118,7 @@ export class GameManager {
   }
 
   // ---------- lobby ----------
-  create(user, socket, { category, count }) {
+  create(user, socket, { category, count, hostPlays = false }) {
     if (this.userGame.has(user.id)) {
       throw new GameError("You're already in a game. Leave it first.");
     }
@@ -135,6 +136,7 @@ export class GameManager {
       code,
       hostId: user.id,
       hostName: user.username,
+      hostPlays: Boolean(hostPlays),
       dbId: info.lastInsertRowid,
       category: category ?? null,
       status: 'lobby',
@@ -147,6 +149,17 @@ export class GameManager {
       createdAt: Date.now(),
       players: new Map(),
     };
+    if (hostPlays) {
+      game.players.set(user.id, {
+        userId: user.id,
+        username: user.username,
+        score: 0,
+        correctCount: 0,
+        lastGain: 0,
+        connected: true,
+        current: null,
+      });
+    }
     this.games.set(code, game);
     this.userGame.set(user.id, code);
     socket.join(code);
@@ -163,6 +176,11 @@ export class GameManager {
     if (existing && existing !== code) throw new GameError("You're already in another game.");
 
     if (game.hostId === user.id) {
+      const player = game.players.get(user.id);
+      if (player) {
+        player.connected = true;
+        this.broadcastState(game);
+      }
       socket.join(code);
       return { code, snapshot: this.snapshot(game, user.id) };
     }

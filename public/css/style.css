@@ -80,4 +80,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 #toast.show { opacity: 1; }
 .opt-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
 .opt-row input[type=radio] { width: auto; }
+.check-row { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; cursor: pointer; user-select: none; font-size: .95rem; color: var(--text); }
+.check-row input[type=checkbox] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--accent); }
 td.medal { width: 3.5rem; }

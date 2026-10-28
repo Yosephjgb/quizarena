@@ -6,6 +6,7 @@ const schemas = {
   'game:create': z.object({
     category: z.string().trim().min(1).max(40).optional(),
     count: z.number().int().min(1).max(30).default(10),
+    hostPlays: z.boolean().default(false),
   }),
   'room:join': z.object({ code: z.string().trim().length(6) }),
   'game:start': z.object({}).optional(),

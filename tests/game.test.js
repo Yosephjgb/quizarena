@@ -123,3 +123,57 @@ test('a player who disconnects mid-game can reconnect and resume', async () => {
   assert.ok((await emitAck(back, 'answer:submit', { choice: 1 })).ok, 'can still answer after reconnecting');
   host.socket.close(); back.close();
 });
+
+test('host can play: host + 1 player, host answers and gets scored on leaderboard', async () => {
+  const host = await signup('host_player');
+  const player = await signup('regular_player');
+
+  const created = await emitAck(host.socket, 'game:create', { count: 2, hostPlays: true });
+  assert.ok(created.ok, created.error);
+  const code = created.code;
+
+  assert.ok((await emitAck(player.socket, 'room:join', { code })).ok);
+
+  const gameEnd = once(host.socket, 'game:end', 15000);
+
+  // Both host and player answer
+  const play = (p, choice) => p.socket.on('question:show', async () => {
+    const r = await emitAck(p.socket, 'answer:submit', { choice });
+    assert.ok(r.ok, r.error);
+  });
+  play(host, 1);
+  play(player, 0);
+
+  assert.ok((await emitAck(host.socket, 'game:start', {})).ok);
+  const end = await gameEnd;
+
+  assert.equal(end.leaderboard.length, 2);
+  assert.equal(end.leaderboard[0].username, 'host_player');
+  assert.equal(end.leaderboard[0].rank, 1);
+  assert.ok(end.leaderboard[0].score > 0);
+
+  // Persisted in database
+  const game = ctx.db.prepare('SELECT * FROM games WHERE code = ?').get(code);
+  const rows = ctx.db.prepare('SELECT * FROM game_players WHERE game_id = ?').all(game.id);
+  assert.equal(rows.length, 2);
+
+  for (const p of [host, player]) p.socket.close();
+});
+
+test('solo game: host plays alone with hostPlays: true', async () => {
+  const host = await signup('solo_host');
+  const created = await emitAck(host.socket, 'game:create', { count: 1, hostPlays: true });
+  assert.ok(created.ok, created.error);
+
+  const gameEnd = once(host.socket, 'game:end', 15000);
+  host.socket.on('question:show', async () => {
+    const r = await emitAck(host.socket, 'answer:submit', { choice: 1 });
+    assert.ok(r.ok, r.error);
+  });
+
+  assert.ok((await emitAck(host.socket, 'game:start', {})).ok);
+  const end = await gameEnd;
+  assert.equal(end.leaderboard.length, 1);
+  assert.equal(end.leaderboard[0].username, 'solo_host');
+  host.socket.close();
+});
