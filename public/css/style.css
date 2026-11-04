@@ -55,6 +55,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .player.off { opacity: .45; }
 .qhead { display: flex; justify-content: space-between; color: var(--muted); font-size: .9rem; margin-bottom: 8px; }
 .qtext { font-size: 1.5rem; font-weight: 700; margin: 8px 0 16px; }
+.qcontent { margin: 8px 0 16px; text-align: center; }
+.qcontent .qtext { margin-bottom: 12px; }
+.qimage-wrap { display: flex; justify-content: center; align-items: center; margin: 12px 0 18px; }
+.qimage { max-width: 280px; max-height: 180px; width: auto; height: auto; border-radius: 8px; border: 2px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,0.25); background: #fff; }
 .bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin-bottom: 18px; }
 .bar > i { display: block; height: 100%; width: 100%; background: var(--accent-2); transform-origin: left; }
 .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

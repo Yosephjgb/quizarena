@@ -61,6 +61,7 @@ async function questionsTab(body, search = '') {
   clear(body).append(
     el('div', { class: 'row', style: 'margin-bottom:12px' },
       el('div', { class: 'grow' }, q),
+      el('button', { class: 'ghost', onclick: () => importTriviaModal(body) }, '🌐 Import from Web'),
       el('button', { onclick: () => questionForm(body, null) }, 'New question')),
     el('div', { class: 'card table-wrap' }, questions.length
       ? el('table', {},
@@ -110,6 +111,62 @@ function questionForm(body, existing) {
           questionsTab(body);
         } catch (e) { error.textContent = e.message; }
       } }, 'Save'),
+      el('button', { class: 'ghost', onclick: () => questionsTab(body) }, 'Cancel'))));
+}
+
+async function importTriviaModal(body) {
+  let categories = {};
+  try {
+    const res = await api('/api/admin/trivia/categories');
+    categories = res.categories || {};
+  } catch { /* fallback */ }
+
+  const catSelect = el('select', {},
+    el('option', { value: '' }, 'Any Category (Random)'),
+    ...Object.entries(categories).map(([name, id]) => el('option', { value: id }, name)));
+
+  const countInput = el('input', { type: 'number', min: 1, max: 50, value: 10 });
+  const diffSelect = el('select', {},
+    el('option', { value: '' }, 'Any Difficulty'),
+    el('option', { value: 'easy' }, 'Easy'),
+    el('option', { value: 'medium' }, 'Medium'),
+    el('option', { value: 'hard' }, 'Hard'));
+
+  const status = el('div', { class: 'muted', style: 'margin-top:10px' });
+  const error = el('div', { class: 'error', role: 'alert' });
+  const btn = el('button', {
+    onclick: async () => {
+      error.textContent = '';
+      status.textContent = 'Fetching trivia questions from the web…';
+      btn.disabled = true;
+      try {
+        const res = await api('/api/admin/trivia/import', {
+          method: 'POST',
+          body: {
+            amount: Number(countInput.value) || 10,
+            category: catSelect.value,
+            difficulty: diffSelect.value,
+          },
+        });
+        toast(`Imported ${res.imported} new questions (${res.totalFetched - res.imported} duplicates skipped)`);
+        questionsTab(body);
+      } catch (err) {
+        error.textContent = err.message;
+        status.textContent = '';
+        btn.disabled = false;
+      }
+    },
+  }, 'Import Now');
+
+  clear(body).append(el('div', { class: 'card narrow' },
+    el('h3', {}, '🌐 Import Questions from Web'),
+    el('p', { class: 'muted' }, 'Fetch multiple-choice trivia instantly from the Open Trivia Database (OpenTDB).'),
+    el('label', {}, 'Category'), catSelect,
+    el('label', {}, 'Number of questions (1 - 50)'), countInput,
+    el('label', {}, 'Difficulty'), diffSelect,
+    error, status,
+    el('div', { class: 'row', style: 'margin-top:16px' },
+      btn,
       el('button', { class: 'ghost', onclick: () => questionsTab(body) }, 'Cancel'))));
 }
 

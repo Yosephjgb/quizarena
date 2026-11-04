@@ -68,6 +68,23 @@ const QUESTIONS = [
   ['Which animated movie features a character named Simba?', ['Finding Nemo', 'Shrek', 'The Lion King', 'Aladdin'], 2, 'Entertainment', 15],
   ['In the TV show "Friends", what is the name of Ross and Monica\'s dog as kids?', ['Buddy', 'Chi-Chi', 'Rex', 'LaPooh'], 3, 'Entertainment', 20],
   ['Which superhero is known as the "Man of Steel"?', ['Batman', 'Iron Man', 'Superman', 'Captain America'], 2, 'Entertainment', 15],
+  // Guess the Flag
+  ['Which country does this flag belong to?\n[image:/flags/fr.svg]', ['Italy', 'France', 'Netherlands', 'Russia'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/de.svg]', ['Belgium', 'Germany', 'Austria', 'Poland'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/jp.svg]', ['South Korea', 'China', 'Japan', 'Bangladesh'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/it.svg]', ['Ireland', 'Hungary', 'Italy', 'Mexico'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/ca.svg]', ['Canada', 'Denmark', 'Switzerland', 'Peru'], 0, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/br.svg]', ['Colombia', 'Brazil', 'South Africa', 'Jamaica'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/ar.svg]', ['Uruguay', 'Guatemala', 'Argentina', 'Honduras'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/gb.svg]', ['Australia', 'New Zealand', 'United Kingdom', 'Iceland'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/es.svg]', ['Portugal', 'Spain', 'Venezuela', 'Ecuador'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/kr.svg]', ['Japan', 'North Korea', 'South Korea', 'Singapore'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/se.svg]', ['Finland', 'Norway', 'Sweden', 'Denmark'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/ch.svg]', ['Austria', 'Switzerland', 'Czech Republic', 'Malta'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/us.svg]', ['Liberia', 'Malaysia', 'United States', 'Chile'], 2, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/gr.svg]', ['Cyprus', 'Greece', 'Israel', 'Finland'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/tr.svg]', ['Tunisia', 'Turkey', 'Algeria', 'Azerbaijan'], 1, 'Flags', 15],
+  ['Which country does this flag belong to?\n[image:/flags/mx.svg]', ['Italy', 'Bolivia', 'Mexico', 'Peru'], 2, 'Flags', 15],
 ];
 
 const db = openDb(config.dbPath);

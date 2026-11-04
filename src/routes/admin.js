@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../validate.js';
 import { mapQuestion } from '../db.js';
+import { fetchTriviaQuestions, OPENTDB_CATEGORIES } from '../trivia.js';
 
 const questionSchema = z
   .object({
@@ -68,6 +69,39 @@ export function adminRoutes({ db, auth, games }) {
     const info = db.prepare('DELETE FROM questions WHERE id = ?').run(req.params.id);
     if (!info.changes) return res.status(404).json({ error: 'Question not found' });
     res.json({ ok: true });
+  });
+
+  // Fetch / Import Trivia Questions from Web (OpenTDB)
+  router.get('/trivia/categories', (req, res) => {
+    res.json({ categories: OPENTDB_CATEGORIES });
+  });
+
+  router.post('/trivia/import', async (req, res) => {
+    try {
+      const amount = Math.min(Math.max(parseInt(req.body.amount, 10) || 10, 1), 50);
+      const category = req.body.category || '';
+      const difficulty = req.body.difficulty || '';
+      const questions = await fetchTriviaQuestions({ amount, category, difficulty });
+
+      const exists = db.prepare('SELECT 1 FROM questions WHERE text = ?');
+      const insert = db.prepare(
+        'INSERT INTO questions (text, options, correct_index, category, time_limit, created_by) VALUES (?,?,?,?,?,?)'
+      );
+
+      let imported = 0;
+      db.transaction(() => {
+        for (const q of questions) {
+          if (exists.get(q.text)) continue;
+          insert.run(q.text, JSON.stringify(q.options), q.correctIndex, q.category, q.timeLimit, req.user.id);
+          imported++;
+        }
+      })();
+
+      res.json({ ok: true, imported, totalFetched: questions.length });
+    } catch (err) {
+      console.error('Trivia import failed', err);
+      res.status(502).json({ error: err.message || 'Failed to import from OpenTDB.' });
+    }
   });
 
   // ---------- Users ----------

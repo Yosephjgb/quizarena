@@ -321,6 +321,19 @@ function startCountdown(q, bar, label) {
   tick = setInterval(update, 100);
 }
 
+function renderQuestionContent(rawText) {
+  const match = rawText.match(/\[image:([^\]]+)\]/);
+  if (!match) return el('div', { class: 'qtext' }, rawText);
+
+  const cleanText = rawText.replace(/\[image:[^\]]+\]/, '').trim();
+  const imgUrl = match[1];
+
+  return el('div', { class: 'qcontent' },
+    cleanText ? el('div', { class: 'qtext' }, cleanText) : null,
+    el('div', { class: 'qimage-wrap' },
+      el('img', { src: imgUrl, alt: 'Question image', class: 'qimage' })));
+}
+
 function renderQuestion(isHost, isPlayer) {
   const q = room.question;
   const bar = el('i');
@@ -349,7 +362,7 @@ function renderQuestion(isHost, isPlayer) {
       el('span', { id: 'answer-count', class: 'muted' }, `${c.answered} / ${c.total} answered`),
       timeLabel),
     el('div', { class: 'bar' }, bar),
-    el('div', { class: 'qtext' }, q.text),
+    renderQuestionContent(q.text),
     !isPlayer ? el('div', { class: 'banner info' }, 'Presenter mode · Answers are hidden on this screen') : banner,
     el('div', { class: 'opts' }, buttons),
     isHost ? el('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end' }, cancelGameButton()) : null));
@@ -376,7 +389,7 @@ function renderReveal(isHost, isPlayer) {
   clear(app).append(el('div', { class: 'card' },
     el('div', { class: 'qhead' }, el('span', {}, `Question ${r.index + 1} of ${r.total}`),
       el('span', {}, r.index + 1 >= r.total ? 'Final results next…' : 'Next question soon…')),
-    el('div', { class: 'qtext' }, q?.text || ''),
+    renderQuestionContent(q?.text || ''),
     banner,
     el('div', { class: 'opts' }, opts),
     el('h3', { style: 'margin-top:20px' }, 'Scoreboard'),
