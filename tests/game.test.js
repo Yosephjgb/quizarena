@@ -177,3 +177,39 @@ test('solo game: host plays alone with hostPlays: true', async () => {
   assert.equal(end.leaderboard[0].username, 'solo_host');
   host.socket.close();
 });
+
+test('host can cancel an active game mid-game', async () => {
+  const host = await signup('cancelling_host');
+  const player = await signup('cancelled_player');
+
+  const created = await emitAck(host.socket, 'game:create', { count: 3 });
+  assert.ok(created.ok, created.error);
+  const code = created.code;
+
+  assert.ok((await emitAck(player.socket, 'room:join', { code })).ok);
+
+  const playerCancelled = once(player.socket, 'game:cancelled', 5000);
+  const hostCancelled = once(host.socket, 'game:cancelled', 5000);
+
+  assert.ok((await emitAck(host.socket, 'game:start', {})).ok);
+
+  // Non-host player cannot cancel
+  const playerAttempt = await emitAck(player.socket, 'game:cancel', {});
+  assert.equal(playerAttempt.ok, false);
+
+  // Host cancels
+  const cancelResult = await emitAck(host.socket, 'game:cancel', {});
+  assert.ok(cancelResult.ok);
+
+  const pEvent = await playerCancelled;
+  const hEvent = await hostCancelled;
+  assert.equal(pEvent.reason, 'The host cancelled the game.');
+  assert.equal(hEvent.reason, 'The host cancelled the game.');
+
+  // Game is marked abandoned in DB
+  const game = ctx.db.prepare('SELECT status FROM games WHERE code = ?').get(code);
+  assert.equal(game.status, 'abandoned');
+
+  host.socket.close();
+  player.socket.close();
+});

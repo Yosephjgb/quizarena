@@ -159,25 +159,31 @@ function renderHome() {
 }
 
 async function playTab(body) {
-  const category = el('select', {}, el('option', { value: '' }, 'All categories'));
+  let selectedCat = '';
+  const catGrid = el('div', { class: 'cat-grid' });
   const count = el('input', { type: 'number', min: 1, max: 30, value: 10 });
   const hostPlays = el('input', { type: 'checkbox', id: 'host-plays', checked: true });
   const createErr = el('div', { class: 'error', role: 'alert' });
   const code = el('input', { maxlength: 6, placeholder: 'ABC123', autocapitalize: 'characters', style: 'text-transform:uppercase;letter-spacing:.2em;font-size:1.3rem;text-align:center' });
   const joinErr = el('div', { class: 'error', role: 'alert' });
 
+  function selectCat(value) {
+    selectedCat = value;
+    catGrid.querySelectorAll('.cat-box').forEach((b) => b.classList.toggle('active', b.dataset.cat === value));
+  }
+
   body.append(el('div', { class: 'grid2' },
     el('div', { class: 'card' },
       el('h3', {}, 'Host a game'),
       el('p', { class: 'muted' }, 'Create a room with a 6-character code. Play along or host for others.'),
-      el('label', {}, 'Category'), category,
+      el('label', {}, 'Category'), catGrid,
       el('label', {}, 'Number of questions'), count,
       el('label', { class: 'check-row' }, hostPlays, el('span', {}, 'Participate as a player')),
       createErr,
       el('button', { class: 'block', onclick: async () => {
         createErr.textContent = '';
         const r = await send('game:create', {
-          category: category.value || undefined,
+          category: selectedCat || undefined,
           count: Number(count.value) || 10,
           hostPlays: hostPlays.checked,
         });
@@ -200,7 +206,14 @@ async function playTab(body) {
 
   try {
     const { categories } = await api('/api/categories');
-    for (const c of categories) category.append(el('option', { value: c.category }, `${c.category} (${c.count})`));
+    // "All" box first
+    const allBox = el('button', { type: 'button', class: 'cat-box active', 'data-cat': '', onclick: () => selectCat('') },
+      'All', el('span', { class: 'cat-count' }, `(${categories.reduce((s, c) => s + c.count, 0)})`));
+    catGrid.append(allBox);
+    for (const c of categories) {
+      catGrid.append(el('button', { type: 'button', class: 'cat-box', 'data-cat': c.category, onclick: () => selectCat(c.category) },
+        c.category, el('span', { class: 'cat-count' }, `(${c.count})`)));
+    }
     if (!categories.length) createErr.textContent = 'No questions yet. An admin needs to add some (or run npm run seed).';
   } catch { /* ignore */ }
 }
@@ -263,6 +276,14 @@ function leaveButton() {
     room = null;
     route();
   } }, 'Leave');
+}
+
+function cancelGameButton() {
+  return el('button', { class: 'ghost danger small', onclick: async () => {
+    if (!confirm('Are you sure you want to cancel the game?')) return;
+    const r = await send('game:cancel');
+    if (!r.ok) toast(r.error);
+  } }, 'Cancel game');
 }
 
 function renderLobby(isHost, isPlayer) {
@@ -330,7 +351,8 @@ function renderQuestion(isHost, isPlayer) {
     el('div', { class: 'bar' }, bar),
     el('div', { class: 'qtext' }, q.text),
     !isPlayer ? el('div', { class: 'banner info' }, 'Presenter mode · Answers are hidden on this screen') : banner,
-    el('div', { class: 'opts' }, buttons)));
+    el('div', { class: 'opts' }, buttons),
+    isHost ? el('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end' }, cancelGameButton()) : null));
   startCountdown(q, bar, timeLabel);
 }
 
@@ -358,7 +380,8 @@ function renderReveal(isHost, isPlayer) {
     banner,
     el('div', { class: 'opts' }, opts),
     el('h3', { style: 'margin-top:20px' }, 'Scoreboard'),
-    boardTable(r.leaderboard.slice(0, 5), true)));
+    boardTable(r.leaderboard.slice(0, 5), true),
+    isHost ? el('div', { class: 'row', style: 'margin-top:16px;justify-content:flex-end' }, cancelGameButton()) : null));
 }
 
 function boardTable(rows, showGain) {

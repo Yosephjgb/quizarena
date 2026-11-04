@@ -31,7 +31,9 @@ button, .btn { font: inherit; font-weight: 600; cursor: pointer; border: 0; bord
 button:hover { filter: brightness(1.1); }
 button:disabled { opacity: .5; cursor: not-allowed; }
 button.ghost, .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
-button.danger { background: var(--danger); }
+button.danger, .btn.danger { background: var(--danger); color: #fff; }
+button.ghost.danger { background: rgba(255, 93, 115, 0.12); border-color: var(--danger); color: var(--danger) !important; font-weight: 600; }
+button.ghost.danger:hover { background: var(--danger); color: #fff !important; }
 button.small { padding: 5px 10px; font-size: .85rem; }
 button.block { width: 100%; margin-top: 16px; }
 .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -83,3 +85,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .check-row { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; cursor: pointer; user-select: none; font-size: .95rem; color: var(--text); }
 .check-row input[type=checkbox] { width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: var(--accent); }
 td.medal { width: 3.5rem; }
+.cat-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 4px; }
+.cat-box { padding: 10px 16px; border-radius: 10px; border: 2px solid var(--line); background: transparent; color: var(--muted); font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .15s; user-select: none; }
+.cat-box:hover { border-color: var(--accent); color: var(--text); }
+.cat-box.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cat-box .cat-count { font-weight: 400; font-size: .78rem; opacity: .7; margin-left: 4px; }

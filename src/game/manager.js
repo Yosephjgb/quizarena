@@ -272,6 +272,13 @@ export class GameManager {
     this.nextQuestion(game);
   }
 
+  cancelByHost(user) {
+    const game = this.getGameFor(user.id);
+    if (!game) throw new GameError('No game found.');
+    if (game.hostId !== user.id) throw new GameError('Only the host can cancel the game.');
+    this.cancel(game, 'The host cancelled the game.');
+  }
+
   nextQuestion(game) {
     if (this.stopped) return;
     game.qIndex += 1;

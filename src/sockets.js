@@ -10,6 +10,7 @@ const schemas = {
   }),
   'room:join': z.object({ code: z.string().trim().length(6) }),
   'game:start': z.object({}).optional(),
+  'game:cancel': z.object({}).optional(),
   'room:leave': z.object({}).optional(),
   'answer:submit': z.object({ choice: z.number().int().min(0).max(3) }),
 };
@@ -82,6 +83,7 @@ export function attachSockets(io, { games, auth }) {
     handle('game:create', (d) => games.create(user, socket, d));
     handle('room:join', (d) => games.join(user, socket, d));
     handle('game:start', () => games.start(user));
+    handle('game:cancel', () => games.cancelByHost(user));
     handle('room:leave', () => games.leave(user, socket));
     handle('answer:submit', (d) => games.submitAnswer(user, d));
 
